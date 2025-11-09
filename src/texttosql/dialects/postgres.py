@@ -27,7 +27,7 @@ class PostgreSQLDialect(DatabaseDialect):
             with conn.cursor() as cursor:
                 return self._build_ddl_from_info_schema(cursor)
 
-    def _build_ddl_from_info_schema(self, cursor) -> str:
+    def _build_ddl_from_info_schema(self, cursor: psycopg2.extensions.cursor) -> str:
         """
         Helper that queries catalog tables and assembles CREATE TABLE strings.
         """
