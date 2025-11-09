@@ -3,21 +3,21 @@ name = "text-to-sql-agent"
 version = "0.1.0"
 description = "A multi-agent system that converts natural language questions into accurate, executable SQL queries."
 dependencies = [
-    "google-adk>=1.18.0,<2.0.0",
+    "google-adk>=1.18.0",
     "sqlglot>=27.29.0",
-    "google-genai>=1.49.0,<2.0.0",
-    "python-dotenv>=1.2.1,<2.0.0",
-    "psycopg2-binary>=2.9.9,<3.0.0",
+    "google-genai>=1.49.0",
+    "python-dotenv>=1.2.1",
+    "psycopg2-binary>=2.9.9",
 ]
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.10"
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.4.2,<9.0.0",
-    "pytest-asyncio>=1.2.0,<2.0.0",
-    "pytest-mock>=3.14.0,<4.0.0",
-    "pytest-cov>=4.1.0,<5.0.0",
-    "ruff>=0.14.4,<1.0.0",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.4",
     "mypy>=1.18.2",
     "types-psycopg2>=2.9.21.20251012",
 ]
