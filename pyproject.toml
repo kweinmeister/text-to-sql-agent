@@ -19,6 +19,8 @@ dev = [
     "pytest-mock>=3.14.0,<4.0.0",
     "pytest-cov>=4.1.0,<5.0.0",
     "ruff>=0.14.4,<1.0.0",
+    "mypy>=1.18.2",
+    "types-psycopg2>=2.9.21.20251012",
 ]
 lint = [
 ]
@@ -55,8 +57,7 @@ follow_imports = "silent"
 ignore_missing_imports = true
 explicit_package_bases = true
 disable_error_code = ["misc", "no-untyped-call", "no-any-return"]
-
-exclude = [".venv"]
+exclude = ["tests/*"]
 
 [tool.codespell]
 ignore-words-list = "rouge"

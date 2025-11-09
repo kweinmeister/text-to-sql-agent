@@ -1,4 +1,7 @@
+import importlib
 import logging
+import os
+import sqlite3
 from unittest.mock import patch
 
 import pytest
@@ -11,7 +14,27 @@ from google.genai import types
 from google.genai.types import Content, Part
 
 from texttosql.agent import root_agent
-from texttosql.config import DB_URI
+
+
+@pytest.fixture
+def temp_sqlite_db(tmp_path) -> str:
+    """Create a temporary SQLite database for testing."""
+    db_path = tmp_path / "test.db"
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    # A simple schema to test against
+    cursor.execute("""
+    CREATE TABLE customer (
+        id INTEGER NOT NULL PRIMARY KEY,
+        name TEXT
+    );
+    """)
+    # Insert some test data
+    cursor.execute("INSERT INTO customer (id, name) VALUES (1, 'John Doe');")
+    cursor.execute("INSERT INTO customer (id, name) VALUES (2, 'Jane Smith');")
+    conn.commit()
+    conn.close()
+    return str(db_path)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -21,24 +44,13 @@ def load_env() -> None:
 
     load_dotenv("src/texttosql/.env")
 
-    db_uri = DB_URI
-    if not db_uri:
-        raise RuntimeError(
-            "DB_URI environment variable not set. Please set DB_URI in .env"
-        )
-
 
 @pytest.mark.asyncio
-@patch("texttosql.tools.load_schema_into_state")
 @patch("google.adk.models.google_llm.Gemini.generate_content_async")
-async def test_agent_run_success(mock_generate_content_async, mock_load_schema_into_state) -> None:
+async def test_agent_run_success(
+    mock_generate_content_async, temp_sqlite_db
+) -> None:
     """Tests a successful run of the agent from question to final SQL."""
-
-    # Mock the schema loading to provide a simple schema
-    mock_load_schema_into_state.side_effect = lambda state, dialect: state.update({
-        "schema_ddl": "CREATE TABLE customer (id INTEGER PRIMARY KEY, name TEXT);",
-        "sqlglot_schema": {"customer": {"id": "INTEGER", "name": "TEXT"}}
-    })
 
     # Configure the mock to return a valid, simple SQL query.
     async def mock_async_generator(*args, **kwargs):
@@ -49,6 +61,19 @@ async def test_agent_run_success(mock_generate_content_async, mock_load_schema_i
         )
 
     mock_generate_content_async.return_value = mock_async_generator()
+
+    # Temporarily override the DB_URI with our test database
+    original_db_uri = os.environ.get("DB_URI")
+    os.environ["DB_URI"] = temp_sqlite_db
+
+    # Re-import the modules to pick up the new DB_URI
+    import texttosql.config
+    import texttosql.dialects.factory
+    import texttosql.tools
+
+    importlib.reload(texttosql.config)
+    importlib.reload(texttosql.tools)
+    importlib.reload(texttosql.dialects.factory)
 
     session_service = InMemorySessionService()
     session = await session_service.create_session(
@@ -71,6 +96,17 @@ async def test_agent_run_success(mock_generate_content_async, mock_load_schema_i
         run_config=RunConfig(streaming_mode=StreamingMode.SSE),
     ):
         events.append(event)
+
+    # Restore the original DB_URI
+    if original_db_uri is not None:
+        os.environ["DB_URI"] = original_db_uri
+    elif "DB_URI" in os.environ:
+        del os.environ["DB_URI"]
+
+    # Re-import the modules to restore the original DB_URI
+    importlib.reload(texttosql.config)
+    importlib.reload(texttosql.tools)
+    importlib.reload(texttosql.dialects.factory)
 
     assert len(events) > 0, "Expected at least one message"
 
