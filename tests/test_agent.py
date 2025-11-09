@@ -47,9 +47,7 @@ def load_env() -> None:
 
 @pytest.mark.asyncio
 @patch("google.adk.models.google_llm.Gemini.generate_content_async")
-async def test_agent_run_success(
-    mock_generate_content_async, temp_sqlite_db
-) -> None:
+async def test_agent_run_success(mock_generate_content_async, temp_sqlite_db) -> None:
     """Tests a successful run of the agent from question to final SQL."""
 
     # Configure the mock to return a valid, simple SQL query.

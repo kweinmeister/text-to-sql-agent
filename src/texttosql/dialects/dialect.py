@@ -112,12 +112,7 @@ class DatabaseDialect(ABC):
 
                 if isinstance(create_expr, exp.Create) and create_expr.kind == "TABLE":
                     # For quoted table names, we need to get the name from the nested Table object
-                    table_name = (
-                        create_expr.this.this.name
-                        if hasattr(create_expr.this, "this")
-                        and hasattr(create_expr.this.this, "name")
-                        else create_expr.this.name
-                    )
+                    table_name = create_expr.this.this.name
                     columns: dict[str, str] = {}
                     schema = create_expr.this
                     if isinstance(schema, exp.Schema):
