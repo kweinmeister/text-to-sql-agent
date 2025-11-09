@@ -21,19 +21,15 @@ curl -O https://raw.githubusercontent.com/bradleygrant/sakila-sqlite3/main/sakil
 
 > 💡 Or [download it manually](https://github.com/bradleygrant/sakila-sqlite3/blob/main/sakila_master.db)
 
-### 2. Configure Your `.env`
+### 2. Configure Your Environment
 
-Verify that `src/texttosql/.env` includes your database path:
+Create a `.env` file in the `src/texttosql` directory by copying the example:
 
-```env
-DB_DIALECT=sqlite
-DB_URI=src/texttosql/sakila_master.db
-MODEL_NAME=gemini-2.5-flash
+```bash
+cp src/texttosql/.env.example src/texttosql/.env
 ```
 
-> ✅ Confirm the path is correct: `ls -la sakila_master.db`
-
-> 💡 You can change the Gemini model by updating `MODEL_NAME` in the `.env` file.
+The default configuration uses the local Sakila SQLite database. No changes are needed to get started.
 
 ### 3. Run Your First Query!
 
