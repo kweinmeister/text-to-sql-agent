@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any
 
 from .config import DB_URI
@@ -68,10 +69,34 @@ def run_sql_validation(
         }
 
     if not sqlglot_schema or "error" in sqlglot_schema:
-        logger.warning("Database schema not available for validation.")
+        # Provide more specific troubleshooting information
+        error_details = []
+        if not sqlglot_schema:
+            error_details.append("SQLGlot schema is None or empty")
+        elif "error" in sqlglot_schema:
+            error_details.append(
+                f"SQLGlot schema contains error: {sqlglot_schema['error']}"
+            )
+
+        # Check if DB_URI is set
+        if not DB_URI:
+            error_details.append("DB_URI environment variable is not set")
+        else:
+            error_details.append(f"DB_URI is set to: {DB_URI}")
+
+        # Check if the database file exists and is not empty
+        if DB_URI and not os.path.exists(DB_URI):
+            error_details.append(f"Database file does not exist: {DB_URI}")
+        elif DB_URI and os.path.exists(DB_URI) and os.path.getsize(DB_URI) == 0:
+            error_details.append(f"Database file is empty: {DB_URI}")
+
+        logger.warning(
+            "Database schema not available for validation. Details: %s",
+            "; ".join(error_details),
+        )
         return {
             "status": "error",
-            "errors": ["Database schema not available for validation."],
+            "errors": ["Database schema not available for validation.", *error_details],
         }
 
     # Pass the correct schema dictionary to the validator.
