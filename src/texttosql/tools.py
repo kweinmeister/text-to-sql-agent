@@ -84,11 +84,17 @@ def run_sql_validation(
         else:
             error_details.append(f"DB_URI is set to: {DB_URI}")
 
-        # Check if the database file exists and is not empty
-        if DB_URI and not os.path.exists(DB_URI):
-            error_details.append(f"Database file does not exist: {DB_URI}")
-        elif DB_URI and os.path.exists(DB_URI) and os.path.getsize(DB_URI) == 0:
-            error_details.append(f"Database file is empty: {DB_URI}")
+        # For file-based databases (like SQLite), check if the database file exists and is not empty
+        # We'll assume it's file-based if it doesn't look like a URL (contains ://)
+        if DB_URI and "://" not in DB_URI:
+            if not os.path.exists(DB_URI):
+                error_details.append(f"Database file does not exist: {DB_URI}")
+            elif os.path.getsize(DB_URI) == 0:
+                error_details.append(f"Database file is empty: {DB_URI}")
+        elif DB_URI and "://" in DB_URI:
+            error_details.append(
+                "Ensure the database server is running and accessible."
+            )
 
         logger.warning(
             "Database schema not available for validation. Details: %s",
