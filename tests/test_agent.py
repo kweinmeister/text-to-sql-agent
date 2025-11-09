@@ -29,9 +29,16 @@ def load_env() -> None:
 
 
 @pytest.mark.asyncio
+@patch("texttosql.tools.load_schema_into_state")
 @patch("google.adk.models.google_llm.Gemini.generate_content_async")
-async def test_agent_run_success(mock_generate_content_async) -> None:
+async def test_agent_run_success(mock_generate_content_async, mock_load_schema_into_state) -> None:
     """Tests a successful run of the agent from question to final SQL."""
+
+    # Mock the schema loading to provide a simple schema
+    mock_load_schema_into_state.side_effect = lambda state, dialect: state.update({
+        "schema_ddl": "CREATE TABLE customer (id INTEGER PRIMARY KEY, name TEXT);",
+        "sqlglot_schema": {"customer": {"id": "INTEGER", "name": "TEXT"}}
+    })
 
     # Configure the mock to return a valid, simple SQL query.
     async def mock_async_generator(*args, **kwargs):
