@@ -2,7 +2,10 @@ import importlib
 import logging
 import os
 import sqlite3
-from unittest.mock import patch
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Any
+from unittest.mock import Mock, patch
 
 import pytest
 from google.adk.agents.run_config import RunConfig, StreamingMode
@@ -17,7 +20,7 @@ from texttosql.agent import root_agent
 
 
 @pytest.fixture
-def temp_sqlite_db(tmp_path) -> str:
+def temp_sqlite_db(tmp_path: Path) -> str:
     """Create a temporary SQLite database for testing."""
     db_path = tmp_path / "test.db"
     conn = sqlite3.connect(db_path)
@@ -47,11 +50,15 @@ def load_env() -> None:
 
 @pytest.mark.asyncio
 @patch("google.adk.models.google_llm.Gemini.generate_content_async")
-async def test_agent_run_success(mock_generate_content_async, temp_sqlite_db) -> None:
+async def test_agent_run_success(
+    mock_generate_content_async: Mock, temp_sqlite_db: str
+) -> None:
     """Tests a successful run of the agent from question to final SQL."""
 
     # Configure the mock to return a valid, simple SQL query.
-    async def mock_async_generator(*args, **kwargs):
+    async def mock_async_generator(
+        *args: Any, **kwargs: Any
+    ) -> AsyncGenerator[LlmResponse]:
         yield LlmResponse(
             content=types.Content(
                 parts=[types.Part(text="SELECT COUNT(*) FROM customer;")]
@@ -73,7 +80,7 @@ async def test_agent_run_success(mock_generate_content_async, temp_sqlite_db) ->
     importlib.reload(texttosql.tools)
     importlib.reload(texttosql.dialects.factory)
 
-    session_service = InMemorySessionService()
+    session_service = InMemorySessionService()  # type: ignore
     session = await session_service.create_session(
         user_id="test_user", app_name="texttosql"
     )

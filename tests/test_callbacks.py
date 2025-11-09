@@ -7,7 +7,7 @@ from texttosql.callbacks import capture_user_message, clean_sql_query, log_agent
 
 
 @pytest.mark.asyncio
-async def test_capture_user_message():
+async def test_capture_user_message() -> None:
     """Test that the user message is captured and old state is cleared."""
     mock_context = MagicMock()
     mock_context.state = {
@@ -29,7 +29,7 @@ async def test_capture_user_message():
 
 
 @pytest.mark.asyncio
-async def test_capture_user_message_with_empty_content():
+async def test_capture_user_message_with_empty_content() -> None:
     """Test capture_user_message when user_content is None."""
     mock_context = MagicMock()
     mock_context.state = {"sql_query": "old_query", "message": "old_message"}
@@ -44,7 +44,7 @@ async def test_capture_user_message_with_empty_content():
 
 
 @pytest.mark.asyncio
-async def test_capture_user_message_with_empty_parts():
+async def test_capture_user_message_with_empty_parts() -> None:
     """Test capture_user_message when user_content.parts is empty."""
     mock_context = MagicMock()
     mock_context.state = {"sql_query": "old_query", "message": "old_message"}
@@ -73,7 +73,7 @@ async def test_capture_user_message_with_empty_parts():
         ("This is not SQL.", "This is not SQL.;"),  # Edge case: no SELECT
     ],
 )
-async def test_clean_sql_query(raw_text, expected_query):
+async def test_clean_sql_query(raw_text: str, expected_query: str) -> None:
     """Test clean_sql_query with various LLM response formats."""
     mock_response = MagicMock()
     mock_response.content = Content(role="model", parts=[Part(text=raw_text)])
@@ -85,7 +85,7 @@ async def test_clean_sql_query(raw_text, expected_query):
 
 
 @pytest.mark.asyncio
-async def test_clean_sql_query_with_no_content():
+async def test_clean_sql_query_with_no_content() -> None:
     """Test clean_sql_query when there is no content."""
     mock_response = MagicMock()
     mock_response.content = None
@@ -96,7 +96,7 @@ async def test_clean_sql_query_with_no_content():
 
 
 @pytest.mark.asyncio
-async def test_clean_sql_query_with_no_parts():
+async def test_clean_sql_query_with_no_parts() -> None:
     """Test clean_sql_query when there are no parts."""
     mock_response = MagicMock()
     mock_response.content = Content(role="model", parts=[])
@@ -107,7 +107,7 @@ async def test_clean_sql_query_with_no_parts():
 
 
 @pytest.mark.asyncio
-async def test_clean_sql_query_with_no_text():
+async def test_clean_sql_query_with_no_text() -> None:
     """Test clean_sql_query when the part has no text."""
     mock_response = MagicMock()
     mock_response.content = Content(role="model", parts=[Part(text=None)])
@@ -120,7 +120,7 @@ async def test_clean_sql_query_with_no_text():
 
 
 @pytest.mark.asyncio
-async def test_clean_sql_query_with_empty_text():
+async def test_clean_sql_query_with_empty_text() -> None:
     """Test clean_sql_query when the part has empty text."""
     mock_response = MagicMock()
     mock_response.content = Content(role="model", parts=[Part(text="")])
@@ -134,7 +134,7 @@ async def test_clean_sql_query_with_empty_text():
 
 
 @pytest.mark.asyncio
-async def test_log_agent_state():
+async def test_log_agent_state() -> None:
     """Test the log_agent_state callback."""
     mock_context = MagicMock()
     mock_context.agent_name = "test_agent"

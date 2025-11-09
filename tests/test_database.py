@@ -1,5 +1,8 @@
 import sqlite3
+from pathlib import Path
+from typing import Any, cast
 
+import psycopg2.extensions
 import pytest
 
 from texttosql.dialects.postgres import PostgreSQLDialect
@@ -7,7 +10,7 @@ from texttosql.dialects.sqlite import SQLiteDialect
 
 
 @pytest.fixture
-def temp_sqlite_db(tmp_path) -> str:
+def temp_sqlite_db(tmp_path: Path) -> str:
     """Create a temporary SQLite database for testing."""
     db_path = tmp_path / "test.db"
     conn = sqlite3.connect(db_path)
@@ -31,7 +34,7 @@ def temp_sqlite_db(tmp_path) -> str:
     return str(db_path)
 
 
-def test_sqlite_get_ddl(temp_sqlite_db: str):
+def test_sqlite_get_ddl(temp_sqlite_db: str) -> None:
     """
     Tests that the SQLiteDialect's get_ddl method correctly extracts
     CREATE TABLE statements from a live database.
@@ -51,7 +54,7 @@ def test_sqlite_get_ddl(temp_sqlite_db: str):
     assert 'PRIMARY KEY ("product_id")' in cleaned_ddl
 
 
-def test_postgres_ddl_generation_logic():
+def test_postgres_ddl_generation_logic() -> None:
     """
     Tests the logic of PostgreSQL's DDL generation helpers.
     This is an approximation since we don't spin up a live PG database.
@@ -60,14 +63,14 @@ def test_postgres_ddl_generation_logic():
 
     # Mock cursor object
     class MockCursor:
-        def __init__(self):
-            self.queries = []
+        def __init__(self) -> None:
+            self.queries: list[str] = []
 
-        def execute(self, query, params=None):
+        def execute(self, query: str, params: Any = None) -> None:
             # Store the query for inspection if needed
             self.queries.append(str(query))
 
-        def fetchall(self):
+        def fetchall(self) -> list[tuple[Any, ...]]:
             # Return data based on which query was last executed
             last_query = self.queries[-1]
             if "information_schema.tables" in last_query:
@@ -87,7 +90,9 @@ def test_postgres_ddl_generation_logic():
     mock_cursor = MockCursor()
 
     # We test the internal helper method directly
-    ddl = dialect._build_ddl_from_info_schema(mock_cursor)
+    ddl = dialect._build_ddl_from_info_schema(
+        cast(psycopg2.extensions.cursor, mock_cursor)
+    )
 
     # Normalize whitespace
     cleaned_ddl = " ".join(ddl.split())

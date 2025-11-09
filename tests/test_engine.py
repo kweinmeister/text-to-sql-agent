@@ -7,7 +7,7 @@ from texttosql.engine import SQLExecutor, SQLValidator
 
 
 @pytest.fixture
-def mock_dialect():
+def mock_dialect() -> SQLiteDialect:
     """A mock dialect for testing."""
     dialect = SQLiteDialect()
     # Mock the sqlglot dialect name to avoid dependency on the concrete class
@@ -16,12 +16,14 @@ def mock_dialect():
 
 
 @pytest.fixture
-def sample_schema():
+def sample_schema() -> dict[str, dict[str, str]]:
     """A sample sqlglot schema for the validator."""
     return {"customer": {"customer_id": "INTEGER", "first_name": "TEXT"}}
 
 
-def test_validator_success(mock_dialect, sample_schema):
+def test_validator_success(
+    mock_dialect: MagicMock, sample_schema: dict[str, dict[str, str]]
+) -> None:
     """Test SQLValidator with a valid query."""
     validator = SQLValidator()
     sql = "SELECT first_name FROM customer WHERE customer_id = 1;"
@@ -29,7 +31,9 @@ def test_validator_success(mock_dialect, sample_schema):
     assert result["status"] == "success"
 
 
-def test_validator_syntax_error(mock_dialect, sample_schema):
+def test_validator_syntax_error(
+    mock_dialect: MagicMock, sample_schema: dict[str, dict[str, str]]
+) -> None:
     """Test SQLValidator with a syntax error."""
     validator = SQLValidator()
     sql = "SELEC first_name FROM customer;"
@@ -42,7 +46,9 @@ def test_validator_syntax_error(mock_dialect, sample_schema):
     )
 
 
-def test_validator_semantic_error_unknown_column(mock_dialect, sample_schema):
+def test_validator_semantic_error_unknown_column(
+    mock_dialect: MagicMock, sample_schema: dict[str, dict[str, str]]
+) -> None:
     """Test SQLValidator with a non-existent column."""
     validator = SQLValidator()
     sql = "SELECT last_name FROM customer;"  # last_name is not in the schema
@@ -52,7 +58,7 @@ def test_validator_semantic_error_unknown_column(mock_dialect, sample_schema):
     assert "could not be resolved" in result["errors"][0]
 
 
-def test_executor_success():
+def test_executor_success() -> None:
     """Test SQLExecutor on a successful query execution."""
     mock_dialect = MagicMock()
     mock_conn = MagicMock()
@@ -72,7 +78,7 @@ def test_executor_success():
     mock_conn.__exit__.assert_called_once()
 
 
-def test_executor_failure():
+def test_executor_failure() -> None:
     """Test SQLExecutor when the database raises an error."""
     mock_dialect = MagicMock()
     mock_conn = MagicMock()
@@ -88,7 +94,7 @@ def test_executor_failure():
     assert error == "Table not found"
 
 
-def test_executor_with_context_manager():
+def test_executor_with_context_manager() -> None:
     """Test that SQLExecutor safely uses context manager."""
     mock_dialect = MagicMock()
     mock_conn = MagicMock()

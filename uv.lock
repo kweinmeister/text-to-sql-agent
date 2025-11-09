@@ -2649,7 +2649,7 @@ requires-dist = [
     { name = "sqlglot", specifier = ">=27.29.0" },
     { name = "types-psycopg2", marker = "extra == 'dev'", specifier = ">=2.9.21.20251012" },
 ]
-provides-extras = ["dev", "lint"]
+provides-extras = ["dev"]
 
 [[package]]
 name = "tomli"

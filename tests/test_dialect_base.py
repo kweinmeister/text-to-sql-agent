@@ -1,18 +1,20 @@
+from typing import Any
 from unittest.mock import MagicMock, patch
 
+from pytest_mock import MockerFixture
 from sqlglot import exp
 
 from texttosql.dialects.dialect import DatabaseDialect
 
 
-class ConcreteDatabaseDialect(DatabaseDialect):
+class ConcreteDatabaseDialect(DatabaseDialect):  # type: ignore
     """A concrete implementation for testing the base class."""
 
     @property
     def name(self) -> str:
         return "test"
 
-    def get_connection(self, db_uri: str):
+    def get_connection(self, db_uri: str) -> Any:
         pass
 
     def get_sqlglot_dialect(self) -> str:
@@ -25,53 +27,61 @@ class ConcreteDatabaseDialect(DatabaseDialect):
         return "TEST"
 
 
-def test_base_class_caching():
+def test_base_class_caching(mocker: MockerFixture) -> None:
     """Test that the base class caching works correctly."""
-    dialect = ConcreteDatabaseDialect()
-
     # Mock the internal method to track calls
-    dialect._get_ddl_from_db = MagicMock(return_value="CREATE TABLE test (id INTEGER);")
+    mock_get_ddl = mocker.patch.object(
+        ConcreteDatabaseDialect,
+        "_get_ddl_from_db",
+        return_value="CREATE TABLE test (id INTEGER);",
+    )
+    dialect = ConcreteDatabaseDialect()
 
     # First call should hit the internal method
     ddl1 = dialect.get_ddl("test_uri")
-    dialect._get_ddl_from_db.assert_called_once_with("test_uri")
+    mock_get_ddl.assert_called_once_with("test_uri")
 
     # Second call should use cache
     ddl2 = dialect.get_ddl("test_uri")
-    dialect._get_ddl_from_db.assert_called_once()  # Still only called once
+    mock_get_ddl.assert_called_once()  # Still only called once
 
     assert ddl1 == ddl2
 
 
-def test_base_class_sqlglot_schema_caching():
+def test_base_class_sqlglot_schema_caching(mocker: MockerFixture) -> None:
     """Test that the SQLGlot schema caching works correctly."""
-    dialect = ConcreteDatabaseDialect()
-
     # Mock the internal methods to track calls
-    dialect._get_ddl_from_db = MagicMock(return_value="CREATE TABLE test (id INTEGER);")
-    dialect._parse_ddl_to_sqlglot_schema = MagicMock(
-        return_value={"test": {"id": "INTEGER"}}
+    mocker.patch.object(
+        ConcreteDatabaseDialect,
+        "_get_ddl_from_db",
+        return_value="CREATE TABLE test (id INTEGER);",
     )
+    mock_parse = mocker.patch.object(
+        ConcreteDatabaseDialect,
+        "_parse_ddl_to_sqlglot_schema",
+        return_value={"test": {"id": "INTEGER"}},
+    )
+    dialect = ConcreteDatabaseDialect()
 
     # First call should parse
     schema1 = dialect.get_sqlglot_schema("test_uri")
-    dialect._parse_ddl_to_sqlglot_schema.assert_called_once()
+    mock_parse.assert_called_once()
 
     # Second call should use cache
     schema2 = dialect.get_sqlglot_schema("test_uri")
-    dialect._parse_ddl_to_sqlglot_schema.assert_called_once()  # Still only called once
+    mock_parse.assert_called_once()  # Still only called once
 
     assert schema1 == schema2
 
 
-def test_parse_ddl_to_sqlglot_schema_with_empty_ddl():
+def test_parse_ddl_to_sqlglot_schema_with_empty_ddl() -> None:
     """Test parsing with empty DDL."""
     dialect = ConcreteDatabaseDialect()
     schema = dialect._parse_ddl_to_sqlglot_schema("")
     assert schema == {}
 
 
-def test_parse_ddl_to_sqlolot_schema_with_malformed_statement():
+def test_parse_ddl_to_sqlolot_schema_with_malformed_statement() -> None:
     """Test parsing with a malformed statement that causes parse to return None."""
     dialect = ConcreteDatabaseDialect()
 
@@ -83,7 +93,7 @@ def test_parse_ddl_to_sqlolot_schema_with_malformed_statement():
         assert schema == {}
 
 
-def test_parse_ddl_to_sqlglot_schema_with_create_without_schema():
+def test_parse_ddl_to_sqlglot_schema_with_create_without_schema() -> None:
     """Test parsing when create expression doesn't have a schema."""
     dialect = ConcreteDatabaseDialect()
 
@@ -100,7 +110,7 @@ def test_parse_ddl_to_sqlglot_schema_with_create_without_schema():
         assert "test" not in schema
 
 
-def test_parse_ddl_to_sqlglot_schema_with_column_without_kind():
+def test_parse_ddl_to_sqlglot_schema_with_column_without_kind() -> None:
     """Test parsing when a column definition doesn't have a type."""
     dialect = ConcreteDatabaseDialect()
 
@@ -139,7 +149,7 @@ def test_parse_ddl_to_sqlglot_schema_with_column_without_kind():
         assert schema["test"]["name"] == "UNKNOWN"
 
 
-def test_parse_ddl_to_sqlglot_schema_with_exception():
+def test_parse_ddl_to_sqlglot_schema_with_exception() -> None:
     """Test that exceptions in parsing are handled gracefully."""
     dialect = ConcreteDatabaseDialect()
 
@@ -153,7 +163,7 @@ def test_parse_ddl_to_sqlglot_schema_with_exception():
         assert schema == {}
 
 
-def test_parse_ddl_to_sqlglot_schema_with_quoted_table_name():
+def test_parse_ddl_to_sqlglot_schema_with_quoted_table_name() -> None:
     """Test parsing with quoted table names."""
     dialect = ConcreteDatabaseDialect()
 

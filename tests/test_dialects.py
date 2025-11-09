@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -9,7 +10,7 @@ from texttosql.dialects.sqlite import SQLiteDialect
 
 
 @pytest.fixture
-def temp_sqlite_db(tmp_path):
+def temp_sqlite_db(tmp_path: Path) -> str:
     """Create a temporary SQLite database for testing."""
     db_path = tmp_path / "test.db"
     conn = sqlite3.connect(db_path)
@@ -34,27 +35,27 @@ def temp_sqlite_db(tmp_path):
 
 
 @patch("texttosql.dialects.factory.DB_DIALECT", "sqlite")
-def test_get_dialect_returns_sqlite():
+def test_get_dialect_returns_sqlite() -> None:
     """Test that get_dialect returns SQLiteDialect for 'sqlite'."""
     dialect = get_dialect()
     assert isinstance(dialect, SQLiteDialect)
 
 
 @patch("texttosql.dialects.factory.DB_DIALECT", "postgresql")
-def test_get_dialect_returns_postgres():
+def test_get_dialect_returns_postgres() -> None:
     """Test that get_dialect returns PostgreSQLDialect for 'postgresql'."""
     dialect = get_dialect()
     assert isinstance(dialect, PostgreSQLDialect)
 
 
 @patch("texttosql.dialects.factory.DB_DIALECT", "unsupported_db")
-def test_get_dialect_raises_error_for_unsupported_dialect():
+def test_get_dialect_raises_error_for_unsupported_dialect() -> None:
     """Test that get_dialect raises a ValueError for an unsupported dialect."""
     with pytest.raises(ValueError, match="Unsupported DB_DIALECT: unsupported_db"):
         get_dialect()
 
 
-def test_ddl_and_schema_caching(temp_sqlite_db: str):
+def test_ddl_and_schema_caching(temp_sqlite_db: str) -> None:
     """Verify that database-hitting and parsing methods are only called once."""
     dialect = SQLiteDialect()
 
@@ -93,7 +94,7 @@ def test_ddl_and_schema_caching(temp_sqlite_db: str):
     assert schema1 == schema2
 
 
-def test_parse_ddl_to_sqlglot_schema_resilience():
+def test_parse_ddl_to_sqlglot_schema_resilience() -> None:
     """Test that the DDL parser can handle a bad statement among good ones."""
     dialect = SQLiteDialect()
     malformed_ddl = """
@@ -117,7 +118,7 @@ def test_parse_ddl_to_sqlglot_schema_resilience():
     assert len(schema) == 2  # The bad statement should be skipped
 
 
-def test_sqlite_type_mapping():
+def test_sqlite_type_mapping() -> None:
     """Test SQLite's generic type mapping logic."""
     dialect = SQLiteDialect()
     assert dialect.map_type_to_ddl("text") == "TEXT"
@@ -127,7 +128,7 @@ def test_sqlite_type_mapping():
     assert dialect.map_type_to_ddl("unknown_type") == "TEXT"  # Default case
 
 
-def test_postgres_type_to_generic():
+def test_postgres_type_to_generic() -> None:
     """Test PostgreSQL's specific type to generic type mapping logic."""
     dialect = PostgreSQLDialect()
     # Test integer types
@@ -165,21 +166,21 @@ def test_postgres_type_to_generic():
     assert dialect._postgres_type_to_generic("unknown_type") == "TEXT"
 
 
-def test_postgres_quote_identifier():
+def test_postgres_quote_identifier() -> None:
     """Test PostgreSQL's identifier quoting."""
     dialect = PostgreSQLDialect()
     assert dialect.quote_identifier("table_name") == '"table_name"'
     assert dialect.quote_identifier("column_name") == '"column_name"'
 
 
-def test_sqlite_quote_identifier():
+def test_sqlite_quote_identifier() -> None:
     """Test SQLite's identifier quoting."""
     dialect = SQLiteDialect()
     assert dialect.quote_identifier("table_name") == '"table_name"'
     assert dialect.quote_identifier("column_name") == '"column_name"'
 
 
-def test_postgres_type_mapping():
+def test_postgres_type_mapping() -> None:
     """Test PostgreSQL's generic type mapping logic."""
     dialect = PostgreSQLDialect()
     assert dialect.map_type_to_ddl("text") == "TEXT"

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from typing import Any, cast
 from unittest.mock import Mock, patch
 
@@ -9,12 +10,12 @@ from texttosql.tools import (
 )
 
 
-def test_load_schema_into_state_success():
+def test_load_schema_into_state_success() -> None:
     """Test that load_schema_into_state correctly populates the state."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_dialect.get_ddl.return_value = "CREATE TABLE test;"
     mock_dialect.get_sqlglot_schema.return_value = {"test": {"id": "int"}}
-    state = {}
+    state: dict[str, Any] = {}
 
     load_schema_into_state(state, mock_dialect)
 
@@ -24,11 +25,11 @@ def test_load_schema_into_state_success():
     mock_dialect.get_sqlglot_schema.assert_called_once()
 
 
-def test_load_schema_into_state_failure():
+def test_load_schema_into_state_failure() -> None:
     """Test load_schema_into_state handles exceptions."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_dialect.get_ddl.side_effect = Exception("DB connection failed")
-    state = {}
+    state: dict[str, Any] = {}
 
     load_schema_into_state(state, mock_dialect)
 
@@ -40,7 +41,7 @@ def test_load_schema_into_state_failure():
 
 
 @patch("texttosql.engine.SQLValidator")
-def test_run_sql_validation_success(MockSQLValidator):
+def test_run_sql_validation_success(MockSQLValidator: Mock) -> None:
     """Test run_sql_validation tool on success."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_validator_instance = MockSQLValidator.return_value
@@ -51,24 +52,24 @@ def test_run_sql_validation_success(MockSQLValidator):
     result = run_sql_validation(state, mock_dialect)
 
     assert result["status"] == "success"
-    assert state["validation_result"]["status"] == "success"
+    assert cast(dict, state["validation_result"])["status"] == "success"
     mock_validator_instance.validate.assert_called_once()
 
 
-def test_run_sql_validation_no_query():
+def test_run_sql_validation_no_query() -> None:
     """Test run_sql_validation when no query is in the state."""
     mock_dialect = Mock(spec=SQLiteDialect)
     state = {"sqlglot_schema": {"some": "schema"}}
     result = run_sql_validation(state, mock_dialect)
     assert result["status"] == "error"
-    assert "No SQL query found" in result["errors"][0]
+    assert "No SQL query found" in cast(Sequence[str], result["errors"])[0]
 
 
-def test_load_schema_into_state_no_db_uri():
+def test_load_schema_into_state_no_db_uri() -> None:
     """Test load_schema_into_state when DB_URI is not set."""
     mock_dialect = Mock(spec=SQLiteDialect)
     with patch("texttosql.tools.DB_URI", None):
-        state = {}
+        state: dict[str, Any] = {}
         load_schema_into_state(state, mock_dialect)
 
         assert (
@@ -82,7 +83,7 @@ def test_load_schema_into_state_no_db_uri():
 
 
 @patch("texttosql.engine.SQLExecutor")
-def test_run_sql_execution_success(MockSQLExecutor):
+def test_run_sql_execution_success(MockSQLExecutor: Mock) -> None:
     """Test run_sql_execution tool on success."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_executor_instance = MockSQLExecutor.return_value
@@ -103,7 +104,7 @@ def test_run_sql_execution_success(MockSQLExecutor):
 
 
 @patch("texttosql.engine.SQLExecutor")
-def test_run_sql_execution_failure(MockSQLExecutor):
+def test_run_sql_execution_failure(MockSQLExecutor: Mock) -> None:
     """Test run_sql_execution tool on failure."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_executor_instance = MockSQLExecutor.return_value
@@ -123,10 +124,10 @@ def test_run_sql_execution_failure(MockSQLExecutor):
         )
 
 
-def test_run_sql_execution_no_query():
+def test_run_sql_execution_no_query() -> None:
     """Test run_sql_execution when no query is in the state."""
     mock_dialect = Mock(spec=SQLiteDialect)
-    state = {}
+    state: dict[str, Any] = {}
     result = run_sql_execution(state, mock_dialect)
     assert result["status"] == "error"
     assert "No SQL query found" in result["error_message"]
@@ -138,7 +139,7 @@ def test_run_sql_execution_no_query():
 
 
 @patch("texttosql.tools.DB_URI", None)
-def test_run_sql_execution_no_db_uri():
+def test_run_sql_execution_no_db_uri() -> None:
     """Test run_sql_execution when DB_URI is not set."""
     mock_dialect = Mock(spec=SQLiteDialect)
     state = {"sql_query": "SELECT * FROM users;"}
@@ -149,12 +150,12 @@ def test_run_sql_execution_no_db_uri():
     assert "execution_result" not in state
 
 
-def test_load_schema_into_state_sqlglot_schema_error():
+def test_load_schema_into_state_sqlglot_schema_error() -> None:
     """Test load_schema_into_state when sqlglot schema loading fails."""
     mock_dialect = Mock(spec=SQLiteDialect)
     mock_dialect.get_ddl.return_value = "CREATE TABLE test;"
     mock_dialect.get_sqlglot_schema.side_effect = Exception("Schema parsing failed")
-    state = {}
+    state: dict[str, Any] = {}
 
     load_schema_into_state(state, mock_dialect)
 
