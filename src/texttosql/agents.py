@@ -21,7 +21,7 @@ class SchemaExtractor(BaseAgent):
 
     async def _run_async_impl(
         self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event, None]:
+    ) -> AsyncGenerator[Event]:
         logger.info(f"[{self.name}] Loading schema.")
         dialect = get_dialect()
         load_schema_into_state(ctx.session.state, dialect)
@@ -41,7 +41,7 @@ class SQLProcessor(BaseAgent):
 
     async def _run_async_impl(
         self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event, None]:
+    ) -> AsyncGenerator[Event]:
         logger.info(f"[{self.name}] Starting SQL processing.")
         state = ctx.session.state
         dialect = get_dialect()
@@ -128,7 +128,7 @@ class CorrectionLoopAgent(BaseAgent):
 
     async def _run_async_impl(
         self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event, None]:
+    ) -> AsyncGenerator[Event]:
         # Get the sub-agents from the parent class
         sql_processor = self.sub_agents[0]
         sql_corrector = self.sub_agents[1]
