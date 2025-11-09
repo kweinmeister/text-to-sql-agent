@@ -69,7 +69,10 @@ def test_correction_loop_agent_custom_max_iterations():
     processor = SQLProcessor(name="TestProcessor")
 
     loop_agent = CorrectionLoopAgent(
-        name="TestLoop", sub_agents=[extractor, processor], max_iterations=5
+        name="TestLoop",
+        sql_processor=extractor,
+        sql_corrector=processor,
+        max_iterations=5,
     )
     assert loop_agent is not None
     assert loop_agent._max_iterations == 5

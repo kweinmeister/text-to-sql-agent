@@ -156,24 +156,24 @@ The `state` object is a dictionary that evolves as the agent pipeline executes. 
 
 | Key | Type | Set By | Description |
 |---|---|---|---|
-| `message` | `str` | `capture_user_message_to_state` (in `agent.py`) | The user's original natural language query. |
-| `db_schema_dict` | `dict` | `load_schema_into_state` (tool) | A dictionary representation of the database schema, extracted by `extract_sqlite_schema`. |
-| `schema_ddl` | `str` | `schema_extractor_agent` | The `CREATE TABLE` statements for the database schema, formatted for the LLM. |
+| `message` | `str` | `capture_user_message` (callback) | The user's original natural language query. |
+| `schema_ddl` | `str` | `SchemaExtractor` (agent) | The `CREATE TABLE` statements for the database schema, formatted for the LLM. |
+| `sqlglot_schema` | `dict` | `SchemaExtractor` (agent) | A dictionary representation of the database schema, used by SQLGlot for validation. |
 | `sql_query` | `str` | `sql_generator_agent`, `sql_corrector_agent` | The generated SQL query. This value is overwritten by the corrector agent upon a failed attempt. |
-| `validation_result` | `dict` | `validate_sql` (tool) | A dictionary containing the status of the SQL validation (`"status": "success"` or `"status": "error"`) and any `errors` from SQLGlot. |
-| `execution_result` | `dict` | `execute_sql` (tool) | A dictionary containing the status of the SQL execution (`"status": "success"` or `"status": "error"`), the query `result` data, or an `error_message`. |
-| `final_sql_query` | `str` | `sql_processing_agent` | The final, successfully validated and executed SQL query returned to the user. |
+| `validation_result` | `dict` | `run_sql_validation` (tool) | A dictionary containing the status of the SQL validation (`"status": "success"` or `"status": "error"`) and any `errors` from SQLGlot. |
+| `execution_result` | `dict` | `run_sql_execution` (tool) | A dictionary containing the status of the SQL execution (`"status": "success"` or `"status": "error"`), the query `result` data, or an `error_message`. |
+| `final_sql_query` | `str` | `CorrectionLoopAgent` | The final, successfully validated and executed SQL query returned to the user. |
 
 ### Example State Flow
 
 1.  **Initial State**: `{}` (empty)
-2.  **After `capture_user_message_to_state`**: `{"message": "How many customers..."}`
-3.  **After `schema_extractor_agent`**: `{"message": "...", "db_schema_dict": {...}, "schema_ddl": "CREATE TABLE..."}`
-4.  **After `sql_generator_agent`**: `{"message": "...", "schema_ddl": "...", "sql_query": "SELECT..."}`
-5.  **After `sql_processing_agent` (successful run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "success"}, "execution_result": {"status": "success", "result": [...]}}`
-6.  **After `sql_processing_agent` (failed run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "error", "errors": [...]}}`
+2.  **After `capture_user_message`**: `{"message": "How many customers..."}`
+3.  **After `SchemaExtractor`**: `{"message": "...", "schema_ddl": "...", "sqlglot_schema": {...}}`
+4.  **After `sql_generator_agent`**: `{"message": "...", "schema_ddl": "...", "sqlglot_schema": {...}, "sql_query": "SELECT..."}`
+5.  **After `SQLProcessor` (successful run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "success"}, "execution_result": {"status": "success", "result": [...]}}`
+6.  **After `SQLProcessor` (failed run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "error", "errors": [...]}}`
 7.  **After `sql_corrector_agent` (on failure)**: The `sql_query` key is updated with the corrected query. The loop then repeats.
-8.  **After `sql_processing_agent` (on success)**: The `final_sql_query` key is set, and the loop exits. This is the final output.
+8.  **After `CorrectionLoopAgent` (on success)**: The `final_sql_query` key is set, and the loop exits. This is the final output.
 
 ---
 

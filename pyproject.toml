@@ -1,7 +1,7 @@
 [project]
 name = "text-to-sql-agent"
 version = "0.1.0"
-description = ""
+description = "A multi-agent system that converts natural language questions into accurate, executable SQL queries."
 dependencies = [
     "google-adk>=1.18.0,<2.0.0",
     "sqlglot>=27.29.0",

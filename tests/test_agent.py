@@ -1,16 +1,13 @@
 import logging
-import os
-import sys
-
-# Add the src directory to the Python path to ensure correct module resolution
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-
+from unittest.mock import patch
 
 import pytest
 from google.adk.agents.run_config import RunConfig, StreamingMode
 from google.adk.events import Event
+from google.adk.models.llm_response import LlmResponse
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+from google.genai import types
 from google.genai.types import Content, Part
 
 from texttosql.agent import root_agent
@@ -32,8 +29,20 @@ def load_env() -> None:
 
 
 @pytest.mark.asyncio
-async def test_agent_run_success() -> None:
+@patch("google.adk.models.google_llm.Gemini.generate_content_async")
+async def test_agent_run_success(mock_generate_content_async) -> None:
     """Tests a successful run of the agent from question to final SQL."""
+
+    # Configure the mock to return a valid, simple SQL query.
+    async def mock_async_generator(*args, **kwargs):
+        yield LlmResponse(
+            content=types.Content(
+                parts=[types.Part(text="SELECT COUNT(*) FROM customer;")]
+            )
+        )
+
+    mock_generate_content_async.return_value = mock_async_generator()
+
     session_service = InMemorySessionService()
     session = await session_service.create_session(
         user_id="test_user", app_name="texttosql"
@@ -58,12 +67,9 @@ async def test_agent_run_success() -> None:
 
     assert len(events) > 0, "Expected at least one message"
 
-    # Check for the final output
+    # Check for the final output from the mock
     final_event = events[-1]
     assert final_event.content is not None, "Final event content should not be None"
     assert final_event.content.parts is not None
-    assert any(
-        "SELECT" in part.text
-        for part in final_event.content.parts
-        if part.text is not None
-    ), "Expected final event to contain a SQL query"
+    final_text = "".join(part.text for part in final_event.content.parts if part.text)
+    assert "SELECT COUNT(*) FROM customer;" in final_text

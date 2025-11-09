@@ -4,6 +4,8 @@ from typing import Any
 
 from sqlglot import exp, parse
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseDialect(ABC):
     """Abstract base class defining database-specific behaviors."""
@@ -131,7 +133,7 @@ class DatabaseDialect(ABC):
                                 columns[column_name] = column_type
                         sqlglot_schema[table_name] = columns
             except Exception as e:
-                logging.warning(
+                logger.warning(
                     f"Could not parse DDL statement: {statement[:100]}... Error: {e}"
                 )
                 continue  # Move to the next statement

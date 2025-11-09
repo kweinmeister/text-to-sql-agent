@@ -19,9 +19,7 @@ logger = logging.getLogger(__name__)
 class SchemaExtractor(BaseAgent):
     """Agent that loads the database schema into state."""
 
-    async def _run_async_impl(
-        self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event]:
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event]:
         logger.info(f"[{self.name}] Loading schema.")
         dialect = get_dialect()
         load_schema_into_state(ctx.session.state, dialect)
@@ -39,9 +37,7 @@ class SQLProcessor(BaseAgent):
     2. Executing it ONLY if validation passed.
     """
 
-    async def _run_async_impl(
-        self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event]:
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event]:
         logger.info(f"[{self.name}] Starting SQL processing.")
         state = ctx.session.state
         dialect = get_dialect()
@@ -121,21 +117,25 @@ class CorrectionLoopAgent(BaseAgent):
     """A loop agent for SQL correction with a clean exit condition."""
 
     def __init__(
-        self, name: str, sub_agents: list[BaseAgent], max_iterations: int = 3
+        self,
+        name: str,
+        sql_processor: BaseAgent,
+        sql_corrector: BaseAgent,
+        max_iterations: int = 3,
     ) -> None:
-        super().__init__(name=name, sub_agents=sub_agents)
+        super().__init__(name=name, sub_agents=[sql_processor, sql_corrector])
+        self._sql_processor = sql_processor
+        self._sql_corrector = sql_corrector
         self._max_iterations = max_iterations
 
-    async def _run_async_impl(
-        self, ctx: InvocationContext
-    ) -> AsyncGenerator[Event]:
-        # Get the sub-agents from the parent class
-        sql_processor = self.sub_agents[0]
-        sql_corrector = self.sub_agents[1]
+    async def _run_async_impl(self, ctx: InvocationContext) -> AsyncGenerator[Event]:
+        # Use the explicitly named agents
+        sql_processor = self._sql_processor
+        sql_corrector = self._sql_corrector
 
         for i in range(self._max_iterations):
             logger.info(f"[{self.name}] Starting correction loop iteration {i + 1}.")
-            logging.info(
+            logger.info(
                 f"[{self.name}] Current SQL query in state: {ctx.session.state.get('sql_query')}"
             )
 
@@ -205,6 +205,7 @@ class CorrectionLoopAgent(BaseAgent):
 
 sql_correction_loop = CorrectionLoopAgent(
     name="SQLCorrectionLoop",
-    sub_agents=[sql_processor_agent, sql_corrector_agent],
+    sql_processor=sql_processor_agent,
+    sql_corrector=sql_corrector_agent,
     max_iterations=3,
 )
