@@ -51,21 +51,15 @@ async def clean_sql_query(
     if code_block_match:
         query_text = code_block_match.group(1)
     else:
-        # If no code block, find the first SELECT statement and go from there
-        select_match = re.search(r"SELECT.*", raw_text, re.DOTALL | re.IGNORECASE)
-        if select_match:
-            query_text = select_match.group(0)
-        else:
-            # If no SELECT is found, just use the raw text and hope for the best
-            query_text = raw_text
+        query_text = raw_text
 
     # Clean up by stripping whitespace and ensuring it ends with a single semicolon
     cleaned_query = query_text.strip()
     if cleaned_query:
-        # Remove any trailing semicolons before adding our own
-        while cleaned_query.endswith(";"):
-            cleaned_query = cleaned_query[:-1].strip()
-        cleaned_query += ";"
+        words = cleaned_query.split()
+        if words and words[0].isupper() and len(words[0]) > 1:
+            if not cleaned_query.endswith(";"):
+                cleaned_query += ";"
 
     if cleaned_query != raw_text:
         logger.info(f"Original LLM output: '{raw_text}'")
