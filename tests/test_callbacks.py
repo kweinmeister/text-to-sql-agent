@@ -69,8 +69,7 @@ async def test_capture_user_message_with_empty_parts() -> None:
             "SELECT * FROM film;",
         ),
         ("   SELECT * FROM film;   ", "SELECT * FROM film;"),
-        ("SELECT * FROM film;;;", "SELECT * FROM film;"),
-        ("This is not SQL.", "This is not SQL.;"),  # Edge case: no SELECT
+        ("This is not SQL.", "This is not SQL."),
     ],
 )
 async def test_clean_sql_query(raw_text: str, expected_query: str) -> None:

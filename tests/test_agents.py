@@ -1,6 +1,3 @@
-from texttosql.agents import CorrectionLoopAgent
-
-
 def test_schema_extractor_instantiation() -> None:
     """Test that the SchemaExtractor can be instantiated."""
     from texttosql.agents import SchemaExtractor
@@ -61,18 +58,25 @@ def test_sql_correction_loop_instantiation() -> None:
 
 
 def test_correction_loop_agent_custom_max_iterations() -> None:
-    """Test that the CorrectionLoopAgent can be instantiated with custom max_iterations."""
-    from texttosql.agents import SchemaExtractor, SQLProcessor
+    """Test that the LoopAgent can be instantiated with custom max_iterations."""
+    from google.adk.agents import LoopAgent
 
-    # Create simple agents for testing
+    from texttosql.agents import SchemaExtractor, sql_corrector_agent
+
+    # Create a simple agent for testing
     extractor = SchemaExtractor(name="TestExtractor")
-    processor = SQLProcessor(name="TestProcessor")
 
-    loop_agent = CorrectionLoopAgent(
+    # The sql_corrector_agent is already part of another agent.
+    # We must clone it to use it in a new agent hierarchy.
+    cloned_corrector_agent = sql_corrector_agent.clone()
+
+    loop_agent = LoopAgent(
         name="TestLoop",
-        sql_processor=extractor,
-        sql_corrector=processor,
+        sub_agents=[
+            extractor,
+            cloned_corrector_agent,
+        ],
         max_iterations=5,
     )
     assert loop_agent is not None
-    assert loop_agent._max_iterations == 5
+    assert loop_agent.max_iterations == 5
