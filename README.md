@@ -135,7 +135,7 @@ graph TD
 | **SQL Generator** | Uses **Gemini** to generate SQL from question + schema |
 | **SQL Validator** | Uses **SQLGlot** to check if tables/columns exist and syntax is valid |
 | **SQL Executor** | Runs query against SQLite and captures results/errors |
-| **CorrectionLoopAgent** | Detects failures and triggers correction |
+| **SQLCorrectionLoop** | Detects failures and triggers correction |
 | **SQL Corrector** | Re-generates SQL with error context |
 
 > ✅ The system **self-corrects** — even if the first SQL is wrong, it learns from errors.
@@ -158,7 +158,7 @@ The `state` object is a dictionary that evolves as the agent pipeline executes. 
 | `sql_query` | `str` | `sql_generator_agent`, `sql_corrector_agent` | The generated SQL query. This value is overwritten by the corrector agent upon a failed attempt. |
 | `validation_result` | `dict` | `run_sql_validation` (tool) | A dictionary containing the status of the SQL validation (`"status": "success"` or `"status": "error"`) and any `errors` from SQLGlot. |
 | `execution_result` | `dict` | `run_sql_execution` (tool) | A dictionary containing the status of the SQL execution (`"status": "success"` or `"status": "error"`), the query `result` data, or an `error_message`. |
-| `final_sql_query` | `str` | `CorrectionLoopAgent` | The final, successfully validated and executed SQL query returned to the user. |
+| `final_sql_query` | `str` | `SQLCorrectionLoop` | The final, successfully validated and executed SQL query returned to the user. |
 
 ### Example State Flow
 
@@ -169,7 +169,7 @@ The `state` object is a dictionary that evolves as the agent pipeline executes. 
 5.  **After `SQLProcessor` (successful run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "success"}, "execution_result": {"status": "success", "result": [...]}}`
 6.  **After `SQLProcessor` (failed run)**: `{"message": "...", "sql_query": "...", "validation_result": {"status": "error", "errors": [...]}}`
 7.  **After `sql_corrector_agent` (on failure)**: The `sql_query` key is updated with the corrected query. The loop then repeats.
-8.  **After `CorrectionLoopAgent` (on success)**: The `final_sql_query` key is set, and the loop exits. This is the final output.
+8.  **After `SQLCorrectionLoop` (on success)**: The `final_sql_query` key is set, and the loop exits. This is the final output.
 
 ---
 
