@@ -1,0 +1,302 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: kweinmeister/text-to-sql-agent
+    source: https://github.com/kweinmeister/text-to-sql-agent
+    branch: main
+    commit: "931cafce"
+    scope: [src/texttosql/__init__.py, src/texttosql/agent.py, src/texttosql/agents.py, src/texttosql/callbacks.py, src/texttosql/config.py,
+      src/texttosql/dialects/factory.py, src/texttosql/tools.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:45:44Z'
+    url: https://a2as.org/certified/agents/kweinmeister/text-to-sql-agent
+  signatures:
+    digest: sha256:zoLpfnJPJNj6aU7d-59dUUwefogU17z07_uHqrXPT40
+    key: ed25519:sICXC2lE27xZsnk-SvbDegCmKyNxZ02D6METjpSf-2U
+    sig: ed25519:bJq5nEbbPGYiC1i_GSzvhpKob47YdrNfC5cXTdFRyUInMEvD1oa1-2NqKFbwh82Qi12XDfJ_C97_V8eLU33ZAA
+
+agents:
+  root_agent:
+    type: instance
+    params:
+      name: TextToSqlRootAgent
+      before_agent_callback: capture_user_message
+      sub_agents: [schema_extractor_agent, sql_generator_agent, sql_correction_loop]
+  schema_extractor_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      name: SchemaExtractor
+  sql_correction_loop:
+    type: instance
+    params:
+      name: SQLCorrectionLoop
+      max_iterations: "3"
+      sub_agents: [sql_processor_agent, sql_corrector_agent]
+  sql_corrector_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      name: sql_corrector_agent
+      description: Corrects a failed SQL query.
+      instruction: get_corrector_instruction
+      output_key: sql_query
+      after_model_callback: clean_sql_query
+  sql_generator_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      name: sql_generator_agent
+      description: Generates an initial SQL query from a natural language question.
+      instruction: get_generator_instruction
+      output_key: sql_query
+      after_model_callback: clean_sql_query
+  sql_processor_agent:
+    type: instance
+    models: [gemini-2.5-flash]
+    params:
+      name: SQLProcessor
+
+models:
+  gemini-2.5-flash:
+    type: literal
+    agents: [sql_generator_agent, sql_corrector_agent, schema_extractor_agent, sql_processor_agent]
+
+teams:
+  root_agent:
+    type: sequential
+    agents: [root_agent, schema_extractor_agent, sql_generator_agent, sql_correction_loop]
+  sql_correction_loop:
+    type: loop
+    agents: [sql_correction_loop, sql_processor_agent, sql_corrector_agent]
+
+imports:
+  ABC: abc.ABC
+  abstractmethod: abc.abstractmethod
+  Agent: google.adk.agents.Agent
+  Any: typing.Any
+  AsyncGenerator: collections.abc.AsyncGenerator
+  BaseAgent: google.adk.agents.BaseAgent
+  CallbackContext: google.adk.agents.callback_context.CallbackContext
+  capture_user_message: callbacks.capture_user_message
+  clean_sql_query: callbacks.clean_sql_query
+  Connection: sqlite3.Connection
+  connection: psycopg2.extensions.connection
+  Content: google.genai.types.Content
+  DatabaseDialect: dialect.DatabaseDialect
+  DB_DIALECT: config.DB_DIALECT
+  DB_URI: config.DB_URI
+  Event: google.adk.events.Event
+  exp: sqlglot.exp
+  get_dialect: dialects.factory.get_dialect
+  InvocationContext: google.adk.agents.invocation_context.InvocationContext
+  LlmResponse: google.adk.models.llm_response.LlmResponse
+  load_schema_into_state: tools.load_schema_into_state
+  logging: logging
+  LoopAgent: google.adk.agents.LoopAgent
+  MappingSchema: sqlglot.schema.MappingSchema
+  MODEL_NAME: config.MODEL_NAME
+  os: os
+  parse: sqlglot.parse
+  parse_one: sqlglot.parse_one
+  Part: google.genai.types.Part
+  PostgreSQLDialect: postgres.PostgreSQLDialect
+  psycopg2: psycopg2
+  re: re
+  ReadonlyContext: google.adk.agents.readonly_context.ReadonlyContext
+  root_agent: agent.root_agent
+  run_sql_execution: tools.run_sql_execution
+  run_sql_validation: tools.run_sql_validation
+  schema_extractor_agent: agents.schema_extractor_agent
+  SequentialAgent: google.adk.agents.SequentialAgent
+  sql: psycopg2.sql
+  sql_correction_loop: agents.sql_correction_loop
+  sql_generator_agent: agents.sql_generator_agent
+  SQLExecutor: engine.SQLExecutor
+  sqlglot_optimize: sqlglot.optimizer.optimize
+  sqlite3: sqlite3
+  SQLiteDialect: sqlite.SQLiteDialect
+  SQLValidator: engine.SQLValidator
+
+functions:
+  __init__:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self]
+    params:
+      returns: None
+  _build_ddl_from_info_schema:
+    type: sync
+    module: src.texttosql.dialects.postgres
+    args: [self, cursor]
+    params:
+      returns: str
+  _ensure_schema_cached:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, db_uri]
+    params:
+      returns: None
+  _get_ddl_from_db:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, db_uri]
+    params:
+      returns: str
+  _parse_ddl_to_sqlglot_schema:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, ddl_string]
+    params:
+      returns: dict
+  _postgres_type_to_generic:
+    type: sync
+    module: src.texttosql.dialects.postgres
+    args: [self, postgres_type]
+    params:
+      returns: str
+  _run_async_impl:
+    type: async
+    module: src.texttosql.agents
+    args: [self, ctx]
+    params:
+      returns: AsyncGenerator[Event]
+  _sqlite_type_to_generic:
+    type: sync
+    module: src.texttosql.dialects.sqlite
+    args: [self, sqlite_type]
+    params:
+      returns: str
+  capture_user_message:
+    type: async
+    module: src.texttosql.callbacks
+    args: [callback_context]
+    params:
+      returns: None
+  clean_sql_query:
+    type: async
+    module: src.texttosql.callbacks
+    args: [callback_context, llm_response]
+    params:
+      returns: None
+  execute:
+    type: sync
+    module: src.texttosql.engine
+    args: [self, sql_query]
+    params:
+      returns: tuple
+  get_connection:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, db_uri]
+    params:
+      returns: Any
+  get_corrector_instruction:
+    type: async
+    module: src.texttosql.agents
+    args: [readonly_context]
+    params:
+      returns: str
+  get_ddl:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, db_uri]
+    params:
+      returns: str
+  get_dialect:
+    type: sync
+    module: src.texttosql.dialects.factory
+    params:
+      returns: DatabaseDialect
+  get_generator_instruction:
+    type: async
+    module: src.texttosql.agents
+    args: [readonly_context]
+    params:
+      returns: str
+  get_sqlglot_dialect:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self]
+    params:
+      returns: str
+  get_sqlglot_schema:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, db_uri]
+    params:
+      returns: dict
+  load_schema_into_state:
+    type: sync
+    module: src.texttosql.tools
+    args: [state, dialect]
+    params:
+      returns: None
+  log_agent_state:
+    type: async
+    module: src.texttosql.callbacks
+    args: [callback_context]
+    params:
+      returns: None
+  map_type_to_ddl:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self, sql_type]
+    params:
+      returns: str
+  name:
+    type: sync
+    module: src.texttosql.dialects.dialect
+    args: [self]
+    params:
+      returns: str
+  quote_identifier:
+    type: sync
+    module: src.texttosql.dialects.postgres
+    args: [self, name]
+    params:
+      returns: str
+  run_sql_execution:
+    type: sync
+    module: src.texttosql.tools
+    args: [state, dialect]
+    params:
+      returns: dict
+  run_sql_validation:
+    type: sync
+    module: src.texttosql.tools
+    args: [state, dialect]
+    params:
+      returns: dict
+  validate:
+    type: sync
+    module: src.texttosql.engine
+    args: [self, sql_query, dialect, sqlglot_schema_dict]
+    params:
+      returns: dict
+
+variables:
+  DB_DIALECT:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.texttosql.config]
+  DB_URI:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.texttosql.config]
+  MODEL_NAME:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [src.texttosql.config]
+
+files:
+  src/texttosql/sakila_master.db:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.path.exists]
