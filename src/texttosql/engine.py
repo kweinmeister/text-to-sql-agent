@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, cast
 
 from sqlglot import parse_one
 from sqlglot.optimizer import optimize as sqlglot_optimize
@@ -34,7 +34,9 @@ class SQLValidator:
 
             # 2. Build Schema object from the provided dictionary
             logger.info("Building SQLGlot schema object...")
-            schema_obj = MappingSchema(sqlglot_schema_dict, dialect=sqlglot_dialect)  # type: ignore[arg-type]
+            schema_obj = MappingSchema(
+                cast(dict[str, Any], sqlglot_schema_dict), dialect=sqlglot_dialect
+            )
             logger.info(
                 f"Schema object built. Tables: {list(sqlglot_schema_dict.keys())}"
             )
