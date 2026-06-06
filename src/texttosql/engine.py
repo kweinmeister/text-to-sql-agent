@@ -34,7 +34,7 @@ class SQLValidator:
 
             # 2. Build Schema object from the provided dictionary
             logger.info("Building SQLGlot schema object...")
-            schema_obj = MappingSchema(sqlglot_schema_dict, dialect=sqlglot_dialect)
+            schema_obj = MappingSchema(sqlglot_schema_dict, dialect=sqlglot_dialect)  # type: ignore[arg-type]
             logger.info(
                 f"Schema object built. Tables: {list(sqlglot_schema_dict.keys())}"
             )
