@@ -19,7 +19,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "ruff>=0.14.4",
     "mypy>=1.18.2",
-    "types-psycopg2>=2.9.21.20251012",
+    "types-psycopg2>=2.9.21.20260518",
 ]
 
 [tool.ruff]
