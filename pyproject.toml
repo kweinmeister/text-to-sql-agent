@@ -7,7 +7,7 @@ dependencies = [
     "sqlglot>=27.29.0",
     "google-genai>=1.49.0",
     "python-dotenv>=1.2.1",
-    "psycopg2-binary>=2.9.9",
+    "psycopg2-binary>=2.9.12",
 ]
 requires-python = ">=3.10"
 
