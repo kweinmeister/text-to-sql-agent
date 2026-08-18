@@ -80,7 +80,7 @@ async def test_agent_run_success(
     importlib.reload(texttosql.tools)
     importlib.reload(texttosql.dialects.factory)
 
-    session_service = InMemorySessionService()  # type: ignore
+    session_service = InMemorySessionService()
     session = await session_service.create_session(
         user_id="test_user", app_name="texttosql"
     )
